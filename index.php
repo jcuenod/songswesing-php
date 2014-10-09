@@ -13,12 +13,26 @@ switch ($task) {
             $_POST['songs']
         );
         $controller->storeService($service);
-        $controller->echoService($service);
+        echo $controller->getService($service);
 		break;
 
 
 	case 'update':
 		break;
+
+
+    case 'create':
+        switch ($_POST['action'])
+        {
+            case "dialog":
+                echo $controller->getCreateForm($_POST["type"]);
+                break;
+            case "submit":
+                //$controller->store
+                break;
+        }
+        break;
+
 
     case 'songusage':
         echo $controller->getSongUsageTable();
@@ -54,7 +68,7 @@ switch ($task) {
         <script src="js/featherlight.min.js"></script>
 
         <!--<link rel="stylesheet" href="css/style.css">
-        <link rel="author" href="humans.txt">-->
+        <link rel="author" href="humans.txt">--><link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
 		<link href="css/jquery-ui.min.css" rel="stylesheet">
 		<link href="css/jquery.tagit.css" rel="stylesheet">
 		<link href="css/tagit.ui-zendesk.css" rel="stylesheet">
@@ -95,15 +109,13 @@ switch ($task) {
             padding: 3px 5px;
             margin: 0 2px;
             border-radius: 5px;
+            cursor: pointer;
+        }
+        a.borderedanchor:hover, a.unborderedanchor:hover, a.songusageanchor:hover {
+            text-decoration: none;
         }
         a.borderedanchor:hover, a.unborderedanchor:hover {
-            cursor: pointer;
             background-color: #ddf;
-            text-decoration: none;
-        }
-        a.songusageanchor:hover {
-            cursor: pointer;
-            text-decoration: none;
         }
 
         .breakdown_header:before {
@@ -118,7 +130,7 @@ switch ($task) {
         }
         h1 {
             margin: 20px 30px 0px 40px;
-            font-family: "quaver sans";
+            font-family: "Open Sans Condensed";
             font-size: 300%;
         }
         .spacer {
@@ -127,6 +139,14 @@ switch ($task) {
         }
         .icontip {
             margin: 2px;
+        }
+        .addnew {
+            float: right;
+            top: 3px;
+            cursor: pointer;
+        }
+        .addnew:hover {
+            text-decoration: none;
         }
         </style>
 
@@ -175,8 +195,6 @@ switch ($task) {
                         })
                         .fail(function() {
                             alert( "error" );
-                        })
-                        .always(function() {
                         });
 
                     console.log("watch out, I could be empty (and you should clear the stuff once it's submitted)");
@@ -210,8 +228,6 @@ switch ($task) {
                 .fail(function(e) {
                     console.log( "error" );
                     console.dir(e);
-                })
-                .always(function() {
                 });
         }
         function songAnchorClicked(el)
@@ -244,8 +260,6 @@ switch ($task) {
                 .fail(function(e) {
                     console.log( "error" );
                     console.dir(e);
-                })
-                .always(function() {
                 });
         }
         function leaderAnchorClicked(el)
@@ -294,8 +308,17 @@ switch ($task) {
                 .fail(function(e) {
                     console.log( "error" );
                     console.dir(e);
+                });
+        }
+        function addnewAnchorClicked(thingToAdd)
+        {
+            var jqxhr = $.post( "#", {"task": "create", "action" : "dialog", "type" : thingToAdd})
+                .done(function(data) {
+                    myFeatherBox = $.featherlight(data);
                 })
-                .always(function() {
+                .fail(function(e) {
+                    console.log( "error" );
+                    console.dir(e);
                 });
         }
         </script>
@@ -307,12 +330,16 @@ switch ($task) {
             <table class="table table-bordered table-condensed table-hover table-striped">
                 <thead>
                     <th>Date</th>
-                    <th>Service</th>
-                    <th>Leader</th>
-                    <th>Songs <a class="songusageanchor" onclick="songUsageAnchorClicked()">usage summary</a></th>
+                    <th>Service<a class="glyphicon glyphicon-plus-sign addnew" onclick="addnewAnchorClicked('service_type')"></a></th>
+                    <th>Leader<a class="glyphicon glyphicon-plus-sign addnew" onclick="addnewAnchorClicked('leader')"></a></th>
+                    <th>
+                        Songs
+                        <a class="songusageanchor" onclick="songUsageAnchorClicked()">usage summary</a>
+                        <a class="glyphicon glyphicon-plus-sign addnew" onclick="addnewAnchorClicked('song')"></a>
+                    </th>
                 </thead>
                 <tbody id="completed">
-                    <?php $controller->echoServices(); ?>
+                    <?php echo $controller->getServicesString(); ?>
                     <tr>
                         <td><input name="date" type="hidden" id="dp" style="float: left" /></td>
                         <td>

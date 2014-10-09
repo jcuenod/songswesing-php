@@ -15,8 +15,6 @@ class controller
 	public function getServices() //TODO: enable some kind of filtering...
 	{
 		$toreturn = [];
-
-
 		$servicelist = $this->db->query_for_assoc("SELECT * FROM `services` ORDER BY `date` DESC LIMIT 10");
 		foreach ($servicelist as $service) {
 			$sung = [];
@@ -56,9 +54,9 @@ class controller
 		return $ret;
 	}
 
-	public function echoService($service)
+	public function getService($service)
 	{
-		printf('<tr>
+		return sprintf('<tr>
 			<td class="date">%s</td>
 			<td class="service_type">%s</td>
 			<td class="leader"><a class="unborderedanchor" onclick="leaderAnchorClicked(this)">%s</a></td>
@@ -70,11 +68,13 @@ class controller
             $this->songsToAnchoredString($service->getSongs())
         );
 	}
-	public function echoServices()
+	public function getServicesString()
 	{
+		$ret = "";
 		foreach ($this->getServices() as $s) {
-			$this->echoService($s);
+			$ret .= $this->getService($s);
 		}
+		return $ret;
 	}
 
 	public function getSongUsageTable()
@@ -117,11 +117,14 @@ class controller
 
 		$tags = $this->getSongTagsString($song_name);
 
+		$sql = "SELECT `songs`.`license`, `songs`.`writers`, `songs`.`lyrics`, `songs`.`sample` FROM `songs` WHERE `songs`.`song_name` LIKE('$song_name')";
+		$songinfo = $this->db->query_for_assoc($sql)[0];
+
 		$miscdata = [
-			"License / Copyright" => "No licensing data yet",
-			"Writers" => "No composer data yet",
-			"Lyrics" => "<a href=#>No lyrics yet</a>",
-			"Sample" => "<a href=#>No samples (youtube etc.) yet</a>",
+			"License / Copyright" => empty($songinfo["license"]) ? "No licensing data yet" : $songinfo["license"],
+			"Writers" => empty($songinfo["writers"]) ? "No composer data yet" : $songinfo["writers"],
+			"Lyrics"  => empty($songinfo["lyrics"]) ? "No lyrics yet" : "<a href='".$songinfo["lyrics"]."' tag target='_blank'>".$songinfo["lyrics"]."</a>",
+			"Sample"  => empty($songinfo["sample"]) ? "No samples (youtube etc.) yet" : "<a href='".$songinfo["sample"]."' tag target='_blank'>".$songinfo["sample"]."</a>",
 		];
 		$detailsdata["tally"] = $tally;
 		if (!empty($tags))
@@ -210,6 +213,41 @@ class controller
 			$tagarray[] = $tag["tag_name"];
 		}
 		return join(", ", $tagarray);
+	}
+
+
+	public function getCreateForm($object_type)
+	{
+		switch ($object_type) {
+			case 'song':
+				?>
+<div><form class="form-horizontal" role="form" id="frm_create">
+	<div class="form-group"><label class="col-sm-3 control-label">Title</label>  <div class="col-sm-9"><input class="form-control" type="text" name="song_name"></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">License</label><div class="col-sm-9"><input class="form-control" type="text" name="license"></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">Writers</label><div class="col-sm-9"><input class="form-control" type="text" name="writers"></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">Lyrics</label> <div class="col-sm-9"><input class="form-control" type="text" name="lyrics"></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">Sample</label> <div class="col-sm-9"><input class="form-control" type="text" name="sample"></div></div>
+	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="create('song')">Create Song</button>
+</form></div>
+				<?php
+				break;
+			case 'leader':
+				?>
+<div><form class="form-horizontal" role="form" id="frm_create">
+	<div class="form-group"><label class="col-sm-4 control-label">Leader Name</label><div class="col-sm-8"><input class="form-control" type="text" name="leader_name"></div></div>
+	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="create('leader')">Create Leader</button>
+</form></div>
+				<?php
+				break;
+			case 'service_type':
+				?>
+<div><form class="form-horizontal" role="form" id="frm_create">
+	<div class="form-group"><label class="col-sm-4 control-label">Service Name</label><div class="col-sm-8"><input class="form-control" type="text" name="service_name"></div></div>
+	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="create('service_type')">Create Service</button>
+</form></div>
+				<?php
+				break;
+		}
 	}
 }
 $controller = new controller();
