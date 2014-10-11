@@ -218,6 +218,7 @@ class controller
 
 	public function getCreateForm($object_type)
 	{
+		//TODO: Don't require all fields
 		switch ($object_type) {
 			case 'song':
 				?>
