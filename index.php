@@ -321,6 +321,11 @@ switch ($task) {
                 .done(function(data) {
                     myFeatherBox = $.featherlight(data);
                     $("form#frm_create").validate();
+                    $("form#frm_create").on("submit", function(e) {
+                        e.preventDefault();
+                        createAnchorClicked(thingToAdd);
+                    });
+                    $("#frm_create input")[0].focus();
                 })
                 .fail(function(e) {
                     console.log( "error" );
