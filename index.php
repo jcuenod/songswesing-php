@@ -73,7 +73,7 @@ switch ($task) {
 
         <!--<link rel="stylesheet" href="css/style.css">
         <link rel="author" href="humans.txt">-->
-        <!--<link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>-->
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
 		<link href="css/jquery-ui.min.css" rel="stylesheet">
 		<link href="css/jquery.tagit.css" rel="stylesheet">
 		<link href="css/tagit.ui-zendesk.css" rel="stylesheet">
