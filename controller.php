@@ -25,8 +25,8 @@ class controller
 
 		 	$toreturn[] = new service_object(
 		 		$service["date"],
-		 		$this->getServiceTypeFromID($service["service_type_id"]),
-		 		$this->getLeaderFromID($service["leader_id"]),
+		 		$service["service_type_id"],
+		 		$service["leader_id"],
 		 		$sung
 		 	);
 		}
@@ -40,7 +40,7 @@ class controller
 			$service->getLeaderID(),
 			$service->getServiceTypeID()
 		));
-		if (!$service_id)
+		if ($service_id == -1)
 			return false;
 
 		$ret = true;
@@ -222,32 +222,79 @@ class controller
 			case 'song':
 				?>
 <div><form class="form-horizontal" role="form" id="frm_create">
-	<div class="form-group"><label class="col-sm-3 control-label">Title</label>  <div class="col-sm-9"><input class="form-control" type="text" name="song_name"></div></div>
-	<div class="form-group"><label class="col-sm-3 control-label">License</label><div class="col-sm-9"><input class="form-control" type="text" name="license"></div></div>
-	<div class="form-group"><label class="col-sm-3 control-label">Writers</label><div class="col-sm-9"><input class="form-control" type="text" name="writers"></div></div>
-	<div class="form-group"><label class="col-sm-3 control-label">Lyrics</label> <div class="col-sm-9"><input class="form-control" type="text" name="lyrics"></div></div>
-	<div class="form-group"><label class="col-sm-3 control-label">Sample</label> <div class="col-sm-9"><input class="form-control" type="text" name="sample"></div></div>
-	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="create('song')">Create Song</button>
+	<div class="form-group"><label class="col-sm-3 control-label">Title</label>  <div class="col-sm-9"><input class="form-control" type="text" name="song_name" required></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">License</label><div class="col-sm-9"><input class="form-control" type="text" name="license" required></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">Writers</label><div class="col-sm-9"><input class="form-control" type="text" name="writers" required></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">Lyrics</label> <div class="col-sm-9"><input class="form-control" type="url" name="lyrics" required></div></div>
+	<div class="form-group"><label class="col-sm-3 control-label">Sample</label> <div class="col-sm-9"><input class="form-control" type="url" name="sample" required></div></div>
+	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="createAnchorClicked('song')">Create Song</button>
 </form></div>
 				<?php
 				break;
 			case 'leader':
 				?>
 <div><form class="form-horizontal" role="form" id="frm_create">
-	<div class="form-group"><label class="col-sm-4 control-label">Leader Name</label><div class="col-sm-8"><input class="form-control" type="text" name="leader_name"></div></div>
-	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="create('leader')">Create Leader</button>
+	<div class="form-group"><label class="col-sm-4 control-label">Leader Name</label><div class="col-sm-8"><input class="form-control" type="text" name="leader_name" required></div></div>
+	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="createAnchorClicked('leader')">Create Leader</button>
 </form></div>
 				<?php
 				break;
 			case 'service_type':
 				?>
 <div><form class="form-horizontal" role="form" id="frm_create">
-	<div class="form-group"><label class="col-sm-4 control-label">Service Name</label><div class="col-sm-8"><input class="form-control" type="text" name="service_name"></div></div>
-	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="create('service_type')">Create Service</button>
+	<div class="form-group"><label class="col-sm-4 control-label">Service Name</label><div class="col-sm-8"><input class="form-control" type="text" name="service_type_name" required></div></div>
+	<div class="form-group"><label class="col-sm-4 control-label">Weight</label><div class="col-sm-8"><input class="form-control" type="number" name="weight" value="0" required></div></div>
+	<button class="btn btn-primary btn-lg btn-block" type="button" onclick="createAnchorClicked('service_type')">Create Service</button>
 </form></div>
 				<?php
 				break;
 		}
+	}
+
+	public function insertNew($object_data)
+	{
+		$object_type_to_table_name = [
+			"leader" => "leaders",
+			"service_type" => "service_types",
+			"song" => "songs"];
+		$object_type_to_fields = [
+			"leader" => ["leader_name"],
+			"service_type" => ["service_type", "weight"],
+			"song" => ["song_name", "license", "writers", "lyrics", "sample"]];
+		
+		$sql = "INSERT INTO ".$object_type_to_table_name[$object_data["object_type"]]
+			.$this->mapFieldsToSQL($object_type_to_table_name[$object_data["object_type"]], $object_type_to_fields[$object_data["object_type"]])
+			." VALUES "
+			.(isset($object_data['values'][0]) ? join(",", $this->mapValuesToSQL($object_data["values"])) : $this->mapValuesToSQL($object_data["values"]));
+		$result = $this->db->just_query($sql);
+
+		if ($result == -1)
+			return "failed";
+
+		$toret["type"] = $object_data["object_type"];
+		switch ($object_data["object_type"]) {
+			case 'song':
+				$toret["newSong"] = $object_data["values"]["song_name"];
+				break;
+			case 'leader':
+				$toret["newLeaderName"] = $object_data["values"]["leader_name"];
+				$toret["newLeaderID"] = $result;
+				break;
+			case 'service_type':
+				$toret["newServiceType"] = $object_data["values"]["service_type_name"];
+				$toret["newServiceTypeID"] = $result;
+				break;
+		}
+
+		return json_encode($toret);
+	}
+	private function mapFieldsToSQL($tablename, $fieldnames)
+	{
+		return "(`".join("`, `$tablename`.`", $fieldnames)."`)";
+	}
+	private function mapValuesToSQL($values)
+	{
+		return "('".join("', '", $values)."')";
 	}
 }
 $controller = new controller();

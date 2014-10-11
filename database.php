@@ -47,7 +47,7 @@ class dbconnection
 			return;
 
 		$ret = $this->mysqli->query($sql);
-		return $this->mysqli->insert_id ? $this->mysqli->insert_id : $ret;
+		return $this->mysqli->insert_id ? $this->mysqli->insert_id : -1;
 	}
 }
 

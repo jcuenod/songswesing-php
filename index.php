@@ -28,7 +28,10 @@ switch ($task) {
                 echo $controller->getCreateForm($_POST["type"]);
                 break;
             case "submit":
-                //$controller->store
+                $var["object_type"] = $_POST["type"];
+                $var["values"] = $_POST["values"];
+                header('Content-Type: application/json');
+                echo $controller->insertNew($var);
                 break;
         }
         break;
@@ -66,9 +69,11 @@ switch ($task) {
         <script src="js/jquery-autogrow.min.js"></script>
         <script src="js/Chart.min.js"></script>
         <script src="js/featherlight.min.js"></script>
+        <script src="js/jquery.validate.min.js"></script>
 
         <!--<link rel="stylesheet" href="css/style.css">
-        <link rel="author" href="humans.txt">--><link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>
+        <link rel="author" href="humans.txt">-->
+        <!--<link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300' rel='stylesheet' type='text/css'>-->
 		<link href="css/jquery-ui.min.css" rel="stylesheet">
 		<link href="css/jquery.tagit.css" rel="stylesheet">
 		<link href="css/tagit.ui-zendesk.css" rel="stylesheet">
@@ -106,10 +111,11 @@ switch ($task) {
             border: 1px solid #ddd;
         }
         a.borderedanchor, a.unborderedanchor, a.songusageanchor {
-            padding: 3px 5px;
-            margin: 0 2px;
+            padding: 1px 5px;
+            margin: 1px 2px;
             border-radius: 5px;
             cursor: pointer;
+            display: inline-block;
         }
         a.borderedanchor:hover, a.unborderedanchor:hover, a.songusageanchor:hover {
             text-decoration: none;
@@ -197,7 +203,7 @@ switch ($task) {
                             alert( "error" );
                         });
 
-                    console.log("watch out, I could be empty (and you should clear the stuff once it's submitted)");
+                    //TODO: clear the stuff once it's submitted
                 },
                 fieldName: 'songs[]',
                 singleField: false,
@@ -235,8 +241,7 @@ switch ($task) {
             var song_name = $(el).html();
             var jqxhr = $.post( "#", {"task": "songdata", "song_name": song_name})
                 .done(function(data) {
-                    console.dir(data);
-                    try {myLightboxChart.destroy(); console.log("destroyed")}catch(e){console.log("not destroyed")}
+                    try {myLightboxChart.destroy(); }catch(e){console.log("something's gone wrong with the chart stuff: ");console.log(e);}
                     var mc = $("<canvas width=600 height=300>");
                     var ctx = mc.get(0).getContext("2d");
                     myLightboxChart = new Chart(ctx).Doughnut(data.chartdata, {
@@ -297,7 +302,7 @@ switch ($task) {
                             }
                         ]
                     };
-                    try {myLightboxChart.destroy(); console.log("destroyed")}catch(e){console.log("not destroyed")}
+                    try {myLightboxChart.destroy(); }catch(e){console.log("something's gone wrong with the chart stuff: ");console.log(e);}
                     var mc = $("<canvas width=600 height=400>");
                     var ctx = mc.get(0).getContext("2d");
                     myLightboxChart = new Chart(ctx).Bar(completedata);
@@ -315,6 +320,37 @@ switch ($task) {
             var jqxhr = $.post( "#", {"task": "create", "action" : "dialog", "type" : thingToAdd})
                 .done(function(data) {
                     myFeatherBox = $.featherlight(data);
+                    $("form#frm_create").validate();
+                })
+                .fail(function(e) {
+                    console.log( "error" );
+                    console.dir(e);
+                });
+        }
+        function createAnchorClicked(thingToAdd)
+        {
+            if (!$("form#frm_create").valid())
+                return;
+
+            var formValues = {};
+            $("form#frm_create").serializeArray().map(function(x){ formValues[x.name] = x.value; });
+            var jqxhr = $.post( "#", {"task": "create", "action" : "submit", "type" : thingToAdd, "values" : formValues})
+                .done(function(data) {
+                    $.featherlight.close();
+                    switch (data.type)
+                    {
+                        case "leader":
+                            $("select[name=leader]").append("<option value=\"" + data.newLeaderID + "\">" + data.newLeaderName + "</option>");
+                            $("select[name=leader]").selectmenu("refresh");
+                            break;
+                        case "service_type":
+                            $("select[name=service_type]").append("<option value=\"" + data.newServiceTypeID + "\">" + data.newServiceType + "</option>");
+                            $("select[name=service_type]").selectmenu("refresh");
+                            break;
+                        case "song":
+                            songArray.push(data.newSong);
+                            break;
+                    }
                 })
                 .fail(function(e) {
                     console.log( "error" );
