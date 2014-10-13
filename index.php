@@ -16,7 +16,7 @@ switch ($task) {
         echo $controller->getService($service);
 		break;
 
-    case 'songArray':
+    case 'getSongs':
         header('Content-Type: application/json');
         echo json_encode($controller->getSongs());
         break;
